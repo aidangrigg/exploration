@@ -15,6 +15,11 @@
             gotools
             gopls
           ];
+
+          buildInputs = [
+            pkgs.leptonica
+            pkgs.tesseract
+          ];
         };
       });
 }
