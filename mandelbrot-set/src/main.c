@@ -6,10 +6,10 @@
 
 #include "raylib.h"
 
-const int WIDTH = 1920 / 4;
-const int HEIGHT = 1080 / 4;
+const int WIDTH = 1920 / 1.5;
+const int HEIGHT = 1080 / 1.5;
 
-const uint32_t MAX_DEPTH = 1000;
+const uint32_t MAX_DEPTH = 200;
 
 const Vector2 DEFAULT_X_BOUNDARY = { -2.5, 1.0 };
 const Vector2 DEFAULT_Y_BOUNDARY = { -1.0, 1.0 };
@@ -38,10 +38,10 @@ Color depth_to_color(uint32_t depth)
 	if (depth == MAX_DEPTH)
 		return BLACK;
 
-	if (depth <= 25)
+	if (depth < MAX_DEPTH / 2)
 	{
 		Color c = {
-			.r = scale_over_range(depth, 0, 25, 0, 255),
+			.r = scale_over_range(depth, 0, MAX_DEPTH / 2, 0, 255),
 			.g = 0,
 			.b = 0,
 			.a = 255
@@ -49,15 +49,17 @@ Color depth_to_color(uint32_t depth)
 
 		return c;
 	}
+	else
+	{
+		Color c = {
+			.r = 255,
+			.g = scale_over_range(depth, MAX_DEPTH / 2, MAX_DEPTH, 0, 255),
+			.b = 0,
+			.a = 255
+		};
 
-	Color c = {
-		.r = 255,
-		.g = scale_over_range(depth, 0, MAX_DEPTH, 0, 255),
-		.b = 0,
-		.a = 255
-	};
-
-	return c;
+		return c;
+	}
 }
 
 Vector2 map_pixel_to_complex(int x, int y, Vector2 x_range, Vector2 y_range)
