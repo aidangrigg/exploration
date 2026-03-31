@@ -6,8 +6,10 @@
 
 #include "raylib.h"
 
-const int WIDTH = 1920 / 1.5;
-const int HEIGHT = 1080 / 1.5;
+const int SCALE_FACTOR = 4;
+
+const int WIDTH = 1920 / SCALE_FACTOR;
+const int HEIGHT = 1080 / SCALE_FACTOR;
 
 const uint32_t MAX_DEPTH = 200;
 
@@ -33,10 +35,29 @@ double scale_over_range(double val, double in_min, double in_max, double out_min
     return out_min + (val - in_min) * (out_max - out_min) / (in_max - in_min);
 }
 
+/* depth 0 -> MAX_DEPTH */
+
 Color depth_to_color(uint32_t depth)
 {
 	if (depth == MAX_DEPTH)
 		return BLACK;
+
+	/* const uint32_t MAX = 1 << 24; */
+
+	/* uint32_t val = scale_over_range(depth, 0, MAX_DEPTH, 0, MAX); */
+
+	/* uint8_t r = val & 0xFF; */
+	/* uint8_t g = (val >> 8) & 0xFF; */
+	/* uint8_t b = (val >> 16) & 0xFF; */
+
+	/* Color c = { */
+	/* 	.r = r, */
+	/* 	.g = g, */
+	/* 	.b = b, */
+	/* 	.a = 255 */
+	/* }; */
+
+	/* return c; */
 
 	if (depth < MAX_DEPTH / 2)
 	{
