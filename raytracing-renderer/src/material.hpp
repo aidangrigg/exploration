@@ -5,75 +5,75 @@
 #include "ray.hpp"
 #include "vec3.hpp"
 
-class material {
+class Material {
 public:
-  virtual ~material() = default;
+  virtual ~Material() = default;
 
-  virtual bool scatter(const ray &, const hit_record &, colour &, ray &) const { return false; }
+  virtual bool scatter(const Ray &, const HitRecord &, Colour &, Ray &) const { return false; }
 };
 
-class lambertian : public material {
+class Lambertian : public Material {
 public:
-  lambertian(const colour &albedo) : albedo(albedo) {}
+  Lambertian(const Colour &albedo) : albedo(albedo) {}
 
-  bool scatter(const ray &, const hit_record &rec, colour &attenuation,
-               ray &scattered) const override {
+  bool scatter(const Ray &, const HitRecord &rec, Colour &attenuation,
+               Ray &scattered) const override {
     auto direction = rec.normal + random_on_hemisphere(rec.normal);
 
     if (direction.near_zero())
       direction = rec.normal;
 
-    scattered = ray(rec.p, direction);
+    scattered = Ray(rec.p, direction);
 
     attenuation = albedo;
     return true;
   }
 
 private:
-  colour albedo;
+  Colour albedo;
 };
 
-class metal : public material {
+class Metal : public Material {
 public:
-  metal(const colour &albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1.0 ? fuzz : 1.0) {}
+  Metal(const Colour &albedo, double fuzz) : albedo(albedo), fuzz(fuzz < 1.0 ? fuzz : 1.0) {}
 
-  bool scatter(const ray &r_in, const hit_record &rec, colour &attenuation,
-               ray &scattered) const override {
-    vec3 reflected = reflect(r_in.direction(), rec.normal);
+  bool scatter(const Ray &r_in, const HitRecord &rec, Colour &attenuation,
+               Ray &scattered) const override {
+    Vec3 reflected = reflect(r_in.direction(), rec.normal);
     reflected = unit_vector(reflected) + (fuzz * random_unit_vector());
-    scattered = ray(rec.p, reflected);
+    scattered = Ray(rec.p, reflected);
     attenuation = albedo;
     return true;
   }
 
 private:
-  colour albedo;
+  Colour albedo;
   double fuzz;
 };
 
-class dielectric : public material {
+class Dielectric : public Material {
 public:
-  dielectric(double refractive_index) : refractive_index(refractive_index) {};
+  Dielectric(double refractive_index) : refractive_index(refractive_index) {};
 
-  bool scatter(const ray &r_in, const hit_record &rec, colour &attenuation,
-               ray &scattered) const override {
-    attenuation = colour(1.0, 1.0, 1.0);
+  bool scatter(const Ray &r_in, const HitRecord &rec, Colour &attenuation,
+               Ray &scattered) const override {
+    attenuation = Colour(1.0, 1.0, 1.0);
     double ri = rec.front_face ? (1.0 / refractive_index) : refractive_index;
 
-    vec3 unit_direction = unit_vector(r_in.direction());
+    Vec3 unit_direction = unit_vector(r_in.direction());
 
     double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
     double sin_theta = std::sqrt(1.0 - cos_theta * cos_theta);
 
     bool cannot_refract = ri * sin_theta > 1.0;
-    vec3 direction;
+    Vec3 direction;
 
     if (cannot_refract || reflectance(cos_theta, ri) > random_double())
       direction = reflect(unit_direction, rec.normal);
     else
       direction = refract(unit_direction, rec.normal, ri);
 
-    scattered = ray(rec.p, direction);
+    scattered = Ray(rec.p, direction);
 
     // vec3 refracted = refract(unit_direction, rec.normal, ri);
     // scattered = ray(rec.p, refracted);

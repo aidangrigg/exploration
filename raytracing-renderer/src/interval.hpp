@@ -1,13 +1,15 @@
 #pragma once
 
-#include "utils.hpp"
+#include "utils/constants.hpp"
+
 #include <algorithm>
-class interval {
+
+class Interval {
 public:
   const double min, max;
 
-  constexpr interval() : min(-infinity), max(infinity) {}
-  constexpr interval(double min, double max) : min(min), max(max) {}
+  constexpr Interval() : min(-infinity), max(infinity) {}
+  constexpr Interval(double min, double max) : min(min), max(max) {}
 
   constexpr double size() const { return max - min; }
 
@@ -15,8 +17,8 @@ public:
   constexpr bool surrounds(double x) const { return x > min && x < max; }
   constexpr double clamp(double x) const { return std::clamp(x, min, max); }
 
-  static const interval empty, universe;
+  static const Interval empty, universe;
 };
 
-constexpr interval interval::empty = interval(+infinity, -infinity);
-constexpr interval interval::universe = interval(-infinity, -infinity);
+constexpr Interval Interval::empty = Interval(+infinity, -infinity);
+constexpr Interval Interval::universe = Interval(-infinity, -infinity);

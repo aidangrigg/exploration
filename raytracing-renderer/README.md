@@ -10,4 +10,7 @@ Based on ![Ray Tracing in One Weekend](https://raytracing.github.io/books/RayTra
 
 ## Benchmarks
 
-Initial: 27m10.739s
+- Baseline (based on book): 27m10.739s
+- Multithreading (6 cores, 12 threads): 3m20.095s
+
+

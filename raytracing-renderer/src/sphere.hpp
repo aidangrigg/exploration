@@ -6,12 +6,12 @@
 #include <cmath>
 #include <memory>
 
-class sphere : public hittable {
+class Sphere : public Hittable {
 public:
-  sphere(const point3 &center, double radius, std::shared_ptr<material> mat)
+  Sphere(const Point3 &center, double radius, std::shared_ptr<Material> mat)
       : center(center), radius(std::fmax(0, radius)), mat(mat) {}
 
-  bool hit(const ray &r, interval ray_t, hit_record &rec) const override {
+  bool hit(const Ray &r, const Interval &ray_t, HitRecord &rec) const override {
     // D2 t2 + 2 O D t + O2 - R2 = 0
 
     // a = D^2
@@ -20,20 +20,21 @@ public:
     // where D = ray direction
     //       O = ray origin
 
-    vec3 oc = center - r.origin();
-    auto a = r.direction().length_squared();
-    auto h = dot(r.direction(), oc);
-    auto c = oc.length_squared() - radius * radius;
+    const Vec3 oc = center - r.origin();
+    const double a = r.direction().length_squared();
+    const double h = dot(r.direction(), oc);
+    const double c = oc.length_squared() - radius * radius;
 
-    auto discriminant = h * h - a * c;
+    const double discriminant = h * h - a * c;
     if (discriminant < 0)
       return false;
 
-    auto sqrtd = std::sqrt(discriminant);
+    const auto sqrtd = std::sqrt(discriminant);
 
-    auto root = (h - sqrtd) / a;
+    const auto a_div = 1.0 / a;
+    auto root = (h - sqrtd) * a_div;
     if (!ray_t.surrounds(root)) {
-      root = (h + sqrtd) / a;
+      root = (h + sqrtd) * a_div;
       if (!ray_t.surrounds(root))
         return false;
     }
@@ -49,7 +50,7 @@ public:
   }
 
 private:
-  const point3 center;
+  const Point3 center;
   const double radius;
-  std::shared_ptr<material> mat;
+  std::shared_ptr<Material> mat;
 };
