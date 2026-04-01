@@ -2,6 +2,7 @@
 
 #include "colour.hpp"
 #include "hittable.hpp"
+#include "utils.hpp"
 #include "vec3.hpp"
 
 #include <iostream>
@@ -10,7 +11,8 @@ class camera {
 public:
   camera(double aspect_ratio = 16.0 / 9.0, double image_width = 400,
          point3 camera_center = {0, 0, 0})
-      : aspect_ratio(aspect_ratio), image_width(image_width),
+      : samples_per_pixel(100), pixel_samples_scale(1.0 / samples_per_pixel),
+        aspect_ratio(aspect_ratio), image_width(image_width),
         image_height(static_cast<int>(image_width / aspect_ratio)), camera_center(camera_center) {
 
     const double focal_length = 1.0;
@@ -38,19 +40,29 @@ public:
     for (int h = 0; h < image_height; h++) {
       std::clog << "Scanlines reminaing: " << (image_height - h) << '\r' << std::flush;
       for (int w = 0; w < image_width; w++) {
-        auto pixel_center = pixel00_loc + (w * pixel_delta_u) + (h * pixel_delta_v);
-        auto ray_direction = pixel_center - camera_center;
+        colour pixel_colour(0, 0, 0);
 
-        ray r(camera_center, ray_direction);
+        for (int sample = 0; sample < samples_per_pixel; sample++) {
+          ray r = get_ray(w, h);
+          pixel_colour += ray_colour(r, world);
+        }
 
-        colour pixel_colour = ray_colour(r, world);
-        write_colour(std::cout, pixel_colour);
+        // colour pixel_colour = ray_colour(r, world);
+        write_colour(std::cout, pixel_samples_scale * pixel_colour);
       }
     }
   }
 
 private:
-  colour ray_colour(const ray &r, const hittable &world) {
+  ray get_ray(int w, int h) const {
+    auto offset = vec3(random_double(-0.5, 0.5), random_double(-0.5, 0.5), 0.0);
+    auto pixel_sample = pixel00_loc + ((w + offset.x) * pixel_delta_u) + ((h + offset.y) * pixel_delta_v);
+    auto direction = pixel_sample - camera_center;
+
+    return ray(camera_center, direction);
+  }
+
+  colour ray_colour(const ray &r, const hittable &world) const {
     hit_record rec;
 
     if (world.hit(r, interval(0, infinity), rec)) {
@@ -62,6 +74,8 @@ private:
     return (1.0 - a) * colour(1.0, 1.0, 1.0) + a * colour(0.5, 0.7, 1.0);
   }
 
+  const int samples_per_pixel;
+  const double pixel_samples_scale;
   const double aspect_ratio;
   const double image_width;
   const double image_height;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interval.hpp"
 #include "vec3.hpp"
 
 #include <ostream>
@@ -11,9 +12,10 @@ inline void write_colour(std::ostream &out, const colour &c) {
   auto g = c.y;
   auto b = c.z;
 
-  int ir = static_cast<int>(255.999 * r);
-  int ig = static_cast<int>(255.999 * g);
-  int ib = static_cast<int>(255.999 * b);
+  static const interval intensity(0.000, 0.999);
+  int ir = static_cast<int>(255.999 * intensity.clamp(r));
+  int ig = static_cast<int>(255.999 * intensity.clamp(g));
+  int ib = static_cast<int>(255.999 * intensity.clamp(b));
 
   out << ir << ' ' << ig << ' ' << ib << ' ' << '\n';
 }
