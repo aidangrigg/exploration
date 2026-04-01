@@ -1,8 +1,8 @@
 #pragma once
 
 #include "colour.hpp"
-#include "material.hpp"
 #include "hittable.hpp"
+#include "material.hpp"
 #include "utils.hpp"
 #include "vec3.hpp"
 
@@ -10,24 +10,32 @@
 
 class camera {
 public:
-  camera(double aspect_ratio = 16.0 / 9.0, double image_width = 400,
-         point3 camera_center = {0, 0, 0})
-      : max_depth(10), samples_per_pixel(100), pixel_samples_scale(1.0 / samples_per_pixel),
+  camera(double aspect_ratio = 16.0 / 9.0, double image_width = 1200)
+      : max_depth(50), samples_per_pixel(500), pixel_samples_scale(1.0 / samples_per_pixel),
         aspect_ratio(aspect_ratio), image_width(image_width),
-        image_height(static_cast<int>(image_width / aspect_ratio)), camera_center(camera_center) {
+        image_height(static_cast<int>(image_width / aspect_ratio)), vfov(20) {
 
-    const double focal_length = 1.0;
-    const double viewport_height = 2.0;
+    const_cast<vec3 &>(this->camera_center) = lookfrom;
+
+    const double focal_length = (lookfrom - lookat).length();
+    auto theta = degrees_to_radians(vfov);
+    auto h = std::tan(theta / 2);
+    auto viewport_height = 2 * h * focal_length;
     const double viewport_width =
         viewport_height * (static_cast<double>(image_width) / image_height);
 
-    const vec3 viewport_u = vec3(viewport_width, 0, 0);
-    const vec3 viewport_v = vec3(0, -viewport_height, 0);
+    // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+    w = unit_vector(lookfrom - lookat);
+    u = unit_vector(cross(vup, w));
+    v = cross(w, u);
+
+    vec3 viewport_u = viewport_width * u;   // Vector across viewport horizontal edge
+    vec3 viewport_v = viewport_height * -v; // Vector down viewport vertical edge
 
     const_cast<vec3 &>(this->pixel_delta_u) = viewport_u / image_width;
     const_cast<vec3 &>(this->pixel_delta_v) = viewport_v / image_height;
     const_cast<point3 &>(this->viewport_upper_left) =
-        camera_center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2;
+        camera_center - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
 
     const_cast<point3 &>(this->pixel00_loc) =
         viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
@@ -96,4 +104,12 @@ private:
 
   const point3 viewport_upper_left;
   const point3 pixel00_loc;
+
+  const double vfov;
+
+  const point3 lookfrom = point3(13, 2, 3); // Point camera is looking from
+  const point3 lookat = point3(0, 0, 0);   // Point camera is looking at
+  const vec3 vup = vec3(0, 1, 0);           // Camera-relative "up" direction
+
+  vec3 u, v, w;
 };
