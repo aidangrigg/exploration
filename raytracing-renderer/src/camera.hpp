@@ -1,6 +1,7 @@
 #pragma once
 
 #include "colour.hpp"
+#include "material.hpp"
 #include "hittable.hpp"
 #include "utils.hpp"
 #include "vec3.hpp"
@@ -11,7 +12,7 @@ class camera {
 public:
   camera(double aspect_ratio = 16.0 / 9.0, double image_width = 400,
          point3 camera_center = {0, 0, 0})
-      : samples_per_pixel(100), pixel_samples_scale(1.0 / samples_per_pixel),
+      : max_depth(10), samples_per_pixel(100), pixel_samples_scale(1.0 / samples_per_pixel),
         aspect_ratio(aspect_ratio), image_width(image_width),
         image_height(static_cast<int>(image_width / aspect_ratio)), camera_center(camera_center) {
 
@@ -44,10 +45,9 @@ public:
 
         for (int sample = 0; sample < samples_per_pixel; sample++) {
           ray r = get_ray(w, h);
-          pixel_colour += ray_colour(r, world);
+          pixel_colour += ray_colour(r, max_depth, world);
         }
 
-        // colour pixel_colour = ray_colour(r, world);
         write_colour(std::cout, pixel_samples_scale * pixel_colour);
       }
     }
@@ -56,17 +56,27 @@ public:
 private:
   ray get_ray(int w, int h) const {
     auto offset = vec3(random_double(-0.5, 0.5), random_double(-0.5, 0.5), 0.0);
-    auto pixel_sample = pixel00_loc + ((w + offset.x) * pixel_delta_u) + ((h + offset.y) * pixel_delta_v);
+    auto pixel_sample =
+        pixel00_loc + ((w + offset.x) * pixel_delta_u) + ((h + offset.y) * pixel_delta_v);
     auto direction = pixel_sample - camera_center;
 
     return ray(camera_center, direction);
   }
 
-  colour ray_colour(const ray &r, const hittable &world) const {
+  colour ray_colour(const ray &r, int depth, const hittable &world) const {
+    if (depth <= 0)
+      return colour(0, 0, 0);
+
     hit_record rec;
 
-    if (world.hit(r, interval(0, infinity), rec)) {
-      return 0.5 * (rec.normal + colour(1, 1, 1));
+    if (world.hit(r, interval(0.001, infinity), rec)) {
+      ray scattered;
+      colour attenuation;
+
+      if (rec.mat->scatter(r, rec, attenuation, scattered)) {
+        return attenuation * ray_colour(scattered, depth - 1, world);
+      }
+      return colour(0, 0, 0);
     }
 
     vec3 unit_direction = unit_vector(r.direction());
@@ -74,6 +84,7 @@ private:
     return (1.0 - a) * colour(1.0, 1.0, 1.0) + a * colour(0.5, 0.7, 1.0);
   }
 
+  const int max_depth;
   const int samples_per_pixel;
   const double pixel_samples_scale;
   const double aspect_ratio;

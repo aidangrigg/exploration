@@ -4,10 +4,12 @@
 #include "interval.hpp"
 #include "vec3.hpp"
 #include <cmath>
+#include <memory>
 
 class sphere : public hittable {
 public:
-  sphere(const point3 &center, double radius) : center(center), radius(std::fmax(0, radius)) {}
+  sphere(const point3 &center, double radius, std::shared_ptr<material> mat)
+      : center(center), radius(std::fmax(0, radius)), mat(mat) {}
 
   bool hit(const ray &r, interval ray_t, hit_record &rec) const override {
     // D2 t2 + 2 O D t + O2 - R2 = 0
@@ -41,6 +43,7 @@ public:
     // normal is the unit vector from intersection point to center of circle
     auto outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
+    rec.mat = mat;
 
     return true;
   }
@@ -48,4 +51,5 @@ public:
 private:
   const point3 center;
   const double radius;
+  std::shared_ptr<material> mat;
 };
