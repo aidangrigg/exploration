@@ -59,6 +59,10 @@ public:
     }
   }
 
+  bool is_running() {
+    return running;
+  }
+
   void wait() {
     std::unique_lock<std::mutex> lk(mtx);
     cv_finished.wait(lk, [this](){ return tasks.empty() && (busy == 0); });

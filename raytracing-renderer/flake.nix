@@ -16,6 +16,7 @@
               gnumake
               cmake
               gdb
+              sdl3
             ];
           };
       });

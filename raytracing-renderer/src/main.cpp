@@ -9,11 +9,12 @@
 
 int main() {
   Camera cam({
-      .max_depth = 50,
-      .samples_per_pixel = 500,
+      .max_depth = 10,
+      .samples_per_pixel = 50,
       .image_width = 1200,
       .lookfrom = {13, 2, 3},
       .lookat = {0, 0, 0},
+      .vfov = 20
   });
 
   HittableList world;

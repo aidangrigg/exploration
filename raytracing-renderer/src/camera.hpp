@@ -4,12 +4,14 @@
 #include "hittable.hpp"
 #include "material.hpp"
 
+#include "renderer/backends/sdl.hpp"
 #include "utils/math.hpp"
 #include "utils/random.hpp"
 
 #include "utils/thread_pool.hpp"
 #include "vec3.hpp"
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -55,25 +57,12 @@ public:
         viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
   }
 
-  void draw(std::vector<std::vector<Colour>> &pixel_buffer) const {
-    std::cout << "P3\n"
-              << image_width << ' ' << image_height << '\n'
-              << 256 /*the colour depth*/ << '\n';
-
-    for (int h = 0; h < image_height; h++) {
-      for (int w = 0; w < image_width; w++) {
-        write_colour(std::cout, pixel_buffer[h][w]);
-      }
-    }
-  }
-
   void render(const Hittable &world) {
     ThreadPool pool;
-    std::vector<std::vector<Colour>> pixels(image_height, std::vector<Colour>(image_width));
+    std::vector<uint32_t> pixels(image_height * image_width);
 
     for (int r = 0; r < image_height; r++) {
-      auto &row = pixels.at(r);
-      pool.push_task([this, r, &row, &world] {
+      pool.push_task([this, r, &pixels, &world] {
         for (int c = 0; c < image_width; c++) {
           Colour pixel_colour(0, 0, 0);
 
@@ -82,14 +71,19 @@ public:
             pixel_colour += ray_colour(ray, max_depth, world);
           }
 
-          row[c] = pixel_colour * pixel_samples_scale;
+          pixels[c + image_width * r] = to_argb8888(pixel_colour * pixel_samples_scale);
         }
       });
     }
 
-    pool.wait();
+    renderer::SDLBackend r(image_width, image_height);
 
-    draw(pixels);
+    while (pool.is_running() && r.is_running()) {
+      r.render_framebuffer(pixels);
+    }
+
+    while (r.is_running()) {
+    }
   }
 
 private:
