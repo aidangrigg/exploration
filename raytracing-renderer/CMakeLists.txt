@@ -22,6 +22,8 @@ find_package(SDL3 REQUIRED)
 add_executable(raycast-renderer
         src/main.cpp)
 
+target_include_directories(raycast-renderer PRIVATE src/)
+
 target_link_libraries(raycast-renderer PRIVATE SDL3::SDL3)
 
 # target_link_libraries(unicorn_datastream

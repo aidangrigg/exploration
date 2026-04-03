@@ -1,8 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_render.h>
-#include <SDL3/SDL_video.h>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -15,14 +14,16 @@ class SDLBackend {
 private:
   template <class T> using sdl_unique_ptr = std::unique_ptr<T, std::function<void(T *)>>;
 
-  int window_width, window_height;
+  uint32_t window_width, window_height, image_width, image_height;
   bool running;
   sdl_unique_ptr<SDL_Window> window;
   sdl_unique_ptr<SDL_Renderer> renderer;
   sdl_unique_ptr<SDL_Texture> texture;
 
 public:
-  SDLBackend(int width, int height) : window_width(width), window_height(height) {
+  SDLBackend(int window_width, int window_height, int image_width, int image_height)
+      : window_width(window_width), window_height(window_height), image_width(image_width),
+        image_height(image_height) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
       std::cerr << "SDL_Init failed: " << SDL_GetError() << "\n";
       return; // TODO: throw exceptions for these errors
@@ -49,7 +50,7 @@ public:
 
     texture = sdl_unique_ptr<SDL_Texture>(
         SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                          window_width, window_height),
+                          image_width, image_height),
         SDL_DestroyTexture);
 
     if (!texture.get()) {
@@ -65,7 +66,7 @@ public:
 
   bool is_running() const { return running; }
 
-  void render_framebuffer(std::vector<uint32_t> &fb) {
+  void render_framebuffer(std::vector<uint32_t> &fb, size_t width) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -75,8 +76,7 @@ public:
     }
 
     SDL_SetRenderDrawColor(renderer.get(), 0, 0, 0, 255);
-    SDL_UpdateTexture(texture.get(), nullptr, fb.data(),
-                      window_width * static_cast<int>(sizeof(uint32_t)));
+    SDL_UpdateTexture(texture.get(), nullptr, fb.data(), width * sizeof(uint32_t));
 
     SDL_RenderClear(renderer.get());
     SDL_RenderTexture(renderer.get(), texture.get(), nullptr, nullptr);

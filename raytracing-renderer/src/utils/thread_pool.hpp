@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <iostream>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -17,33 +18,32 @@ private:
   std::condition_variable cv_work, cv_finished;
   std::atomic<int> busy;
 
-
-  std::function<void()> thread_run = [this] {
-    while (true) {
-      std::unique_lock<std::mutex> lk(mtx);
-
-      cv_work.wait(lk, [this] { return !tasks.empty() || !running; });
-
-      if (tasks.empty() || !running)
-        return;
-
-      auto task = tasks.front();
-      tasks.pop();
-      busy++;
-      lk.unlock();
-
-      task();
-
-      lk.lock();
-      busy--;
-      cv_finished.notify_one();
-    }
-  };
-
 public:
   ThreadPool(int num_threads = std::thread::hardware_concurrency()) : running(true), busy(0) {
     for (int i = 0; i < num_threads; i++) {
-      threads.emplace_back(thread_run);
+      threads.emplace_back([this] {
+        while (true) {
+          std::unique_lock<std::mutex> lk(mtx);
+
+          cv_work.wait(lk, [this] { return !tasks.empty() || !running; });
+
+          if (tasks.empty() || !running)
+            return;
+
+          auto task = tasks.front();
+          tasks.pop();
+          busy++;
+          lk.unlock();
+
+          // std::cout << "Task started" << std::endl;
+          task();
+          // std::cout << "Task ended" << std::endl;
+
+          lk.lock();
+          busy--;
+          cv_finished.notify_one();
+        }
+      });
     }
   }
 
@@ -59,13 +59,11 @@ public:
     }
   }
 
-  bool is_running() {
-    return running;
-  }
+  bool is_running() { return running; }
 
   void wait() {
     std::unique_lock<std::mutex> lk(mtx);
-    cv_finished.wait(lk, [this](){ return tasks.empty() && (busy == 0); });
+    cv_finished.wait(lk, [this]() { return tasks.empty() && (busy == 0); });
   }
 
   void push_task(std::function<void()> fn) {

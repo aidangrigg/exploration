@@ -1,6 +1,7 @@
 #include "camera.hpp"
 #include "hittable-list.hpp"
 #include "material.hpp"
+#include "renderer/renderer.hpp"
 #include "sphere.hpp"
 
 #include <cassert>
@@ -8,14 +9,10 @@
 #include <memory>
 
 int main() {
-  Camera cam({
-      .max_depth = 10,
-      .samples_per_pixel = 50,
-      .image_width = 1200,
-      .lookfrom = {13, 2, 3},
-      .lookat = {0, 0, 0},
-      .vfov = 20
-  });
+  CameraSettings s = {.vfov = 20, .lookfrom = {13, 2, 3}, .lookat = {0, 0, -1}};
+
+  std::shared_ptr<Camera> camera = std::make_shared<Camera>(s);
+  renderer::Renderer r(camera, {.raycast_depth = 2, .samples_per_pixel = 5});
 
   HittableList world;
 
@@ -58,6 +55,9 @@ int main() {
   auto material3 = std::make_shared<Metal>(Colour(0.7, 0.6, 0.5), 0.0);
   world.add(std::make_shared<Sphere>(Point3(4, 1, 0), 1.0, material3));
 
-  cam.render(world);
+  while (r.running()) {
+    r.render(world);
+  }
+
   return 0;
 }
