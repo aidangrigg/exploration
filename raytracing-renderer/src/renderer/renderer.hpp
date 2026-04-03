@@ -6,6 +6,9 @@
 #include "utils/thread_pool.hpp"
 
 #include "backends/sdl.hpp"
+#include "vec3.hpp"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_scancode.h>
 #include <cstdint>
 #include <memory>
 
@@ -32,7 +35,7 @@ class Renderer {
 private:
   ThreadPool pool;
 
-  std::shared_ptr<Camera> camera;
+  std::shared_ptr<camera::Camera> camera;
   std::shared_ptr<SDLBackend> backend;
 
   std::vector<uint32_t> fb;
@@ -62,11 +65,45 @@ private:
   }
 
 public:
-  Renderer(std::shared_ptr<Camera> camera, Settings settings)
+  Renderer(std::shared_ptr<camera::Camera> camera, Settings settings)
       : camera(camera), settings(settings) {
     backend = std::make_shared<SDLBackend>(camera->width(), camera->height(), camera->width(),
                                            camera->height());
     fb.resize(camera->width() * camera->height(), 0);
+  }
+
+  void keyboard_handler(SDL_Scancode code) {
+    switch (code) {
+    case SDL_SCANCODE_W:
+      camera->move(camera::FORWARD);
+      break;
+    case SDL_SCANCODE_S:
+      camera->move(camera::BACKWARD);
+      break;
+    case SDL_SCANCODE_A:
+      camera->move(camera::LEFT);
+      break;
+    case SDL_SCANCODE_D:
+      camera->move(camera::RIGHT);
+      break;
+    default:
+      break;
+    }
+  }
+
+  void handle_inputs() {
+    SDL_Event event;
+
+    while (backend->poll_event(event)) {
+      switch (event.type) {
+      case SDL_EVENT_QUIT:
+        backend->set_running(false);
+        break;
+      case SDL_EVENT_KEY_DOWN:
+        keyboard_handler(event.key.scancode);
+        break;
+      }
+    }
   }
 
   void render(const Hittable &world) {
@@ -89,11 +126,12 @@ public:
       });
     }
 
-    pool.wait();
-    backend->render_framebuffer(fb, image_width);
+    // TODO: this is not thread safe
+    while (pool.is_busy()) {
+      handle_inputs();
+    }
 
-    // while (pool.is_running() && backend->is_running()) {
-    // }
+    backend->render_framebuffer(fb, image_width);
   }
 
   bool running() { return backend->is_running(); }

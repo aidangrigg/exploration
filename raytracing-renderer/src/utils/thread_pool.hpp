@@ -3,8 +3,8 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <mutex>
 #include <iostream>
+#include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
@@ -60,6 +60,8 @@ public:
   }
 
   bool is_running() { return running; }
+
+  bool is_busy() { return busy != 0; }
 
   void wait() {
     std::unique_lock<std::mutex> lk(mtx);

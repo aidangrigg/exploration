@@ -27,6 +27,13 @@ public:
     return *this;
   }
 
+  constexpr Vec3 &operator-=(const Vec3 &v) {
+    x -= v.x;
+    y -= v.y;
+    z -= v.z;
+    return *this;
+  }
+
   constexpr Vec3 &operator*=(double t) {
     x *= t;
     y *= t;
@@ -48,6 +55,8 @@ public:
     constexpr auto s = 1e-8;
     return (std::fabs(x) < s) && (std::fabs(y) < s) && (std::fabs(z) < s);
   }
+
+  constexpr void normalize() { *this /= length(); }
 };
 
 using Point3 = Vec3;

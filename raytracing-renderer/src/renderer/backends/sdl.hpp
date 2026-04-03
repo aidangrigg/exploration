@@ -30,8 +30,7 @@ public:
     }
 
     window = sdl_unique_ptr<SDL_Window>(
-        SDL_CreateWindow("really cool window title...", window_width, window_height, 0),
-        SDL_DestroyWindow);
+        SDL_CreateWindow("really cool window title...", 1920, 1080, 0), SDL_DestroyWindow);
 
     if (!window.get()) {
       std::cerr << "Window creation failed: " << SDL_GetError() << "\n";
@@ -65,6 +64,10 @@ public:
   ~SDLBackend() { SDL_Quit(); }
 
   bool is_running() const { return running; }
+  void set_running(bool r) { running = r; }
+
+  // TODO: dont't expose SDL event
+  bool poll_event(SDL_Event &e) { return SDL_PollEvent(&e); }
 
   void render_framebuffer(std::vector<uint32_t> &fb, size_t width) {
     SDL_Event event;
