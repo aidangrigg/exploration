@@ -26,6 +26,8 @@ namespace renderer {
 struct Settings {
   const int raycast_depth = 5;
   const int samples_per_pixel = 10;
+  const int window_width = 1920;
+  const int window_height = 1080;
 };
 
 // TODO: could handle a ratio of image_width/height & screen_width/height,
@@ -84,10 +86,26 @@ private:
     }
   }
 
+  const float MOUSE_SENSITIVITY = 0.1;
+
+  void handle_mouse_motion(float dx, float dy) {
+    if (dx != 0) {
+      auto yaw = camera->get_yaw();
+      yaw -= dx * MOUSE_SENSITIVITY;
+      camera->set_yaw(yaw);
+    }
+
+    if (dy != 0) {
+      auto pitch = camera->get_pitch();
+      pitch += dy * MOUSE_SENSITIVITY;
+      camera->set_pitch(pitch);
+    }
+  }
+
 public:
   Renderer(std::shared_ptr<camera::Camera> camera, Settings settings)
       : camera(camera), settings(settings) {
-    backend = std::make_shared<SDLBackend>(camera->width(), camera->height(), camera->width(),
+    backend = std::make_shared<SDLBackend>(settings.window_width, settings.window_height, camera->width(),
                                            camera->height());
     fb.resize(camera->width() * camera->height(), 0);
   }
@@ -103,11 +121,14 @@ public:
       case SDL_EVENT_KEY_DOWN:
         keyboard_handler(event.key.scancode);
         break;
+      case SDL_EVENT_MOUSE_MOTION:
+        handle_mouse_motion(event.motion.xrel, event.motion.yrel);
+        break;
       }
     }
   }
 
-  void render(const Hittable &world) {
+  void draw(const Hittable &world) {
     const auto start_time = std::chrono::steady_clock::now();
 
     const int image_width = camera->width();

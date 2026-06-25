@@ -75,6 +75,9 @@ public:
   int width() const { return image_width; }
   int height() const { return image_height; }
 
+  float get_yaw() { return yaw; }
+  float get_pitch() { return pitch; }
+
   constexpr static double velocity = 0.2;
 
   void move(Movement m) {

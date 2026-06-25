@@ -60,6 +60,7 @@ public:
       return;
     }
 
+    SDL_SetWindowRelativeMouseMode(window.get(), true);
     running = true;
   }
 
