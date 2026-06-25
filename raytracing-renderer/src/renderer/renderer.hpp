@@ -1,4 +1,3 @@
-
 #include "camera.hpp"
 #include "colour.hpp"
 #include "hittable.hpp"
@@ -42,8 +41,6 @@ private:
 
   std::vector<uint32_t> fb;
 
-  std::queue<camera::Movement> event_queue;
-
   Settings settings;
 
   Colour ray_colour(const Ray &r, int depth, const Hittable &world) const {
@@ -68,6 +65,25 @@ private:
     return (1.0 - a) * Colour(1.0, 1.0, 1.0) + a * Colour(0.5, 0.7, 1.0);
   }
 
+  void keyboard_handler(SDL_Scancode code) {
+    switch (code) {
+    case SDL_SCANCODE_W:
+      camera->move(camera::FORWARD);
+      break;
+    case SDL_SCANCODE_S:
+      camera->move(camera::BACKWARD);
+      break;
+    case SDL_SCANCODE_A:
+      camera->move(camera::LEFT);
+      break;
+    case SDL_SCANCODE_D:
+      camera->move(camera::RIGHT);
+      break;
+    default:
+      break;
+    }
+  }
+
 public:
   Renderer(std::shared_ptr<camera::Camera> camera, Settings settings)
       : camera(camera), settings(settings) {
@@ -76,26 +92,7 @@ public:
     fb.resize(camera->width() * camera->height(), 0);
   }
 
-  void keyboard_handler(SDL_Scancode code) {
-    switch (code) {
-    case SDL_SCANCODE_W:
-      event_queue.push(camera::FORWARD);
-      break;
-    case SDL_SCANCODE_S:
-      event_queue.push(camera::BACKWARD);
-      break;
-    case SDL_SCANCODE_A:
-      event_queue.push(camera::LEFT);
-      break;
-    case SDL_SCANCODE_D:
-      event_queue.push(camera::RIGHT);
-      break;
-    default:
-      break;
-    }
-  }
-
-  void enqueue_input_events() {
+  void handle_inputs() {
     SDL_Event event;
 
     while (backend->poll_event(event)) {
@@ -107,13 +104,6 @@ public:
         keyboard_handler(event.key.scancode);
         break;
       }
-    }
-  }
-
-  void handle_input_events() {
-    while (!event_queue.empty()) {
-      camera->move(event_queue.front());
-      event_queue.pop();
     }
   }
 
@@ -139,11 +129,7 @@ public:
       });
     }
 
-    while (pool.is_busy()) {
-      enqueue_input_events();
-    }
-
-    handle_input_events();
+    while (pool.is_busy()) {}
 
     const auto end_time = std::chrono::steady_clock::now();
 

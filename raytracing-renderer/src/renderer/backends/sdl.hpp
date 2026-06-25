@@ -16,7 +16,7 @@ class SDLBackend {
 private:
   template <class T> using sdl_unique_ptr = std::unique_ptr<T, std::function<void(T *)>>;
 
-  uint32_t window_width, window_height, image_width, image_height;
+  // uint32_t window_width, window_height, image_width, image_height;
   bool running;
   sdl_unique_ptr<SDL_Window> window;
   sdl_unique_ptr<SDL_Renderer> renderer;
@@ -24,15 +24,15 @@ private:
 
 public:
   SDLBackend(int window_width, int window_height, int image_width, int image_height)
-      : window_width(window_width), window_height(window_height), image_width(image_width),
-        image_height(image_height) {
+     /* : window_width(window_width), window_height(window_height), image_width(image_width),
+          image_height(image_height)*/ {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
       std::cerr << "SDL_Init failed: " << SDL_GetError() << "\n";
       return; // TODO: throw exceptions for these errors
     }
 
     window = sdl_unique_ptr<SDL_Window>(
-        SDL_CreateWindow("really cool window title...", 1920, 1080, 0), SDL_DestroyWindow);
+        SDL_CreateWindow("really cool window title...", window_width, window_height, 0), SDL_DestroyWindow);
 
     if (!window.get()) {
       std::cerr << "Window creation failed: " << SDL_GetError() << "\n";
@@ -73,14 +73,6 @@ public:
 
   void render_framebuffer(std::vector<uint32_t> &fb, size_t width,
                           std::optional<double> frame_time) {
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_EVENT_QUIT) {
-        running = false;
-      }
-    }
-
     if (frame_time.has_value()) {
       std::cout << std::setprecision(3) << "\r Frame time: " << frame_time.value()
                 << " FPS: " << 1000 / frame_time.value() << std::flush;
