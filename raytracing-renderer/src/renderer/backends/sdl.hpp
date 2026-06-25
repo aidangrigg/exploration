@@ -4,8 +4,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace renderer {
@@ -69,13 +71,19 @@ public:
   // TODO: dont't expose SDL event
   bool poll_event(SDL_Event &e) { return SDL_PollEvent(&e); }
 
-  void render_framebuffer(std::vector<uint32_t> &fb, size_t width) {
+  void render_framebuffer(std::vector<uint32_t> &fb, size_t width,
+                          std::optional<double> frame_time) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
       if (event.type == SDL_EVENT_QUIT) {
         running = false;
       }
+    }
+
+    if (frame_time.has_value()) {
+      std::cout << std::setprecision(3) << "\r Frame time: " << frame_time.value()
+                << " FPS: " << 1000 / frame_time.value() << std::flush;
     }
 
     SDL_SetRenderDrawColor(renderer.get(), 0, 0, 0, 255);

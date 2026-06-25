@@ -20,7 +20,7 @@ int main() {
   std::shared_ptr<camera::Camera> camera = std::make_shared<camera::Camera>(vs);
   camera->set_camera_pos({5, 2, 5});
 
-  renderer::Renderer r(camera, {.raycast_depth = 3, .samples_per_pixel = 6});
+  renderer::Renderer r(camera, {.raycast_depth = 5, .samples_per_pixel = 6});
 
   HittableList world;
 
@@ -64,7 +64,6 @@ int main() {
   world.add(std::make_shared<Sphere>(Point3(4, 1, 0), 1.0, material3));
 
   while (r.running()) {
-    r.handle_inputs();
     r.render(world);
   }
 

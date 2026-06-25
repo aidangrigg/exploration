@@ -9,8 +9,10 @@
 #include "vec3.hpp"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_scancode.h>
+#include <chrono>
 #include <cstdint>
 #include <memory>
+#include <queue>
 
 namespace renderer {
 
@@ -39,6 +41,8 @@ private:
   std::shared_ptr<SDLBackend> backend;
 
   std::vector<uint32_t> fb;
+
+  std::queue<camera::Movement> event_queue;
 
   Settings settings;
 
@@ -75,23 +79,23 @@ public:
   void keyboard_handler(SDL_Scancode code) {
     switch (code) {
     case SDL_SCANCODE_W:
-      camera->move(camera::FORWARD);
+      event_queue.push(camera::FORWARD);
       break;
     case SDL_SCANCODE_S:
-      camera->move(camera::BACKWARD);
+      event_queue.push(camera::BACKWARD);
       break;
     case SDL_SCANCODE_A:
-      camera->move(camera::LEFT);
+      event_queue.push(camera::LEFT);
       break;
     case SDL_SCANCODE_D:
-      camera->move(camera::RIGHT);
+      event_queue.push(camera::RIGHT);
       break;
     default:
       break;
     }
   }
 
-  void handle_inputs() {
+  void enqueue_input_events() {
     SDL_Event event;
 
     while (backend->poll_event(event)) {
@@ -106,7 +110,16 @@ public:
     }
   }
 
+  void handle_input_events() {
+    while (!event_queue.empty()) {
+      camera->move(event_queue.front());
+      event_queue.pop();
+    }
+  }
+
   void render(const Hittable &world) {
+    const auto start_time = std::chrono::steady_clock::now();
+
     const int image_width = camera->width();
     const int image_height = camera->height();
     const double pixel_samples_scale = 1.0 / settings.samples_per_pixel;
@@ -126,12 +139,16 @@ public:
       });
     }
 
-    // TODO: this is not thread safe
     while (pool.is_busy()) {
-      handle_inputs();
+      enqueue_input_events();
     }
 
-    backend->render_framebuffer(fb, image_width);
+    handle_input_events();
+
+    const auto end_time = std::chrono::steady_clock::now();
+
+    std::chrono::duration<double, std::milli> ms_double = end_time - start_time;
+    backend->render_framebuffer(fb, image_width, ms_double.count());
   }
 
   bool running() { return backend->is_running(); }
