@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(CMAKE_EXPORT_COMPILE_COMMANDS)
   set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
@@ -19,16 +19,4 @@ endif()
 
 find_package(SDL3 REQUIRED)
 
-add_executable(raycast-renderer
-        src/main.cpp)
-
-target_include_directories(raycast-renderer PRIVATE src/)
-
-target_link_libraries(raycast-renderer PRIVATE SDL3::SDL3)
-
-# target_link_libraries(unicorn_datastream
-#     PRIVATE
-#     ${CMAKE_SOURCE_DIR}/lib/libunicorn.so
-#     stdc++ # needed by libunicorn
-#     bluetooth
-# )
+add_subdirectory(src)

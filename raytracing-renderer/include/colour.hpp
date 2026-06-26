@@ -1,7 +1,7 @@
 #pragma once
 
-#include "interval.hpp"
-#include "vec3.hpp"
+#include "math/interval.hpp"
+#include "math/vec3.hpp"
 
 #include <cstdint>
 #include <ostream>

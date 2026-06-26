@@ -1,0 +1,73 @@
+#include "renderer/backends/sdl.hpp"
+#include <iomanip>
+#include <iostream>
+
+namespace renderer {
+
+SDLBackend::SDLBackend(int window_width, int window_height, int image_width, int image_height)
+/* : window_width(window_width), window_height(window_height), image_width(image_width),
+     image_height(image_height)*/
+{
+  if (!SDL_Init(SDL_INIT_VIDEO)) {
+    std::cerr << "SDL_Init failed: " << SDL_GetError() << "\n";
+    return; // TODO: throw exceptions for these errors
+  }
+
+  window = sdl_unique_ptr<SDL_Window>(
+      SDL_CreateWindow("really cool window title...", window_width, window_height, 0),
+      SDL_DestroyWindow);
+
+  if (!window.get()) {
+    std::cerr << "Window creation failed: " << SDL_GetError() << "\n";
+    SDL_Quit();
+    return;
+  }
+
+  renderer =
+      sdl_unique_ptr<SDL_Renderer>(SDL_CreateRenderer(window.get(), nullptr), SDL_DestroyRenderer);
+
+  if (!renderer.get()) {
+    std::cerr << "Renderer creation failed: " << SDL_GetError() << "\n";
+    SDL_Quit();
+    return;
+  }
+
+  texture = sdl_unique_ptr<SDL_Texture>(SDL_CreateTexture(renderer.get(), SDL_PIXELFORMAT_ARGB8888,
+                                                          SDL_TEXTUREACCESS_STREAMING, image_width,
+                                                          image_height),
+                                        SDL_DestroyTexture);
+
+  if (!texture.get()) {
+    std::cerr << "Failed to create texture: " << SDL_GetError() << "\n";
+    SDL_Quit();
+    return;
+  }
+
+  SDL_SetWindowRelativeMouseMode(window.get(), true);
+  running = true;
+}
+
+SDLBackend::~SDLBackend() { SDL_Quit(); }
+
+bool SDLBackend::is_running() const { return running; }
+void SDLBackend::set_running(bool r) { running = r; }
+
+// TODO: dont't expose SDL event
+bool SDLBackend::poll_event(SDL_Event &e) { return SDL_PollEvent(&e); }
+
+void SDLBackend::render_framebuffer(std::vector<uint32_t> &fb, size_t width,
+                                    std::optional<double> frame_time) {
+  if (frame_time.has_value()) {
+    std::cout << std::setprecision(3) << "\r Frame time: " << frame_time.value()
+              << " FPS: " << 1000 / frame_time.value() << std::flush;
+  }
+
+  SDL_SetRenderDrawColor(renderer.get(), 0, 0, 0, 255);
+  SDL_UpdateTexture(texture.get(), nullptr, fb.data(), width * sizeof(uint32_t));
+
+  SDL_RenderClear(renderer.get());
+  SDL_RenderTexture(renderer.get(), texture.get(), nullptr, nullptr);
+  SDL_RenderPresent(renderer.get());
+}
+
+}; // namespace renderer
